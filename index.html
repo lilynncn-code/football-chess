@@ -1,0 +1,161 @@
+<div id="football-chess">
+  <div class="fc-top">
+    <div>
+      <div class="fc-title">足球国际象棋</div>
+      <div class="fc-subtitle">足球代替棋子 · 标准国际象棋规则</div>
+    </div>
+    <div class="fc-actions"><div class="fc-status" aria-live="polite"><span class="fc-turn-dot"></span><span id="fc-status-text">你先开球</span></div><button type="button" id="fc-reset">重新开始</button></div>
+  </div>
+  <div class="fc-stage">
+    <div class="fc-rank-labels" aria-hidden="true"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+    <div id="fc-board" class="fc-board" role="grid" aria-label="足球国际象棋棋盘"></div>
+    <div class="fc-file-labels" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+  </div>
+  <div class="fc-help">点击一个足球，再点击亮起的格子走棋</div>
+</div>
+
+<style>
+  #football-chess {
+    --fc-ink: light-dark(#18322b, #edf8f3);
+    --fc-muted: light-dark(#62726c, #aabbb5);
+    --fc-surface: light-dark(#f7f3e9, #18221f);
+    --fc-light: light-dark(#e9ddbd, #b9aa86);
+    --fc-dark: light-dark(#54866c, #3f6b57);
+    --fc-accent: #d7ff54;
+    width: min(100%, 680px);
+    margin: 0 auto;
+    color: var(--fc-ink);
+    font-family: ui-rounded, "SF Pro Rounded", "PingFang SC", sans-serif;
+  }
+  #football-chess .fc-top { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin: 2px 8px 18px; }
+  #football-chess .fc-title { font-size:clamp(24px, 5vw, 38px); font-weight:900; letter-spacing:-1px; }
+  #football-chess .fc-subtitle { margin-top:4px; color:var(--fc-muted); font-size:13px; }
+  #football-chess .fc-status { flex:0 0 auto; display:flex; align-items:center; gap:8px; font-size:14px; font-weight:750; padding:9px 12px; border:1px solid color-mix(in srgb, var(--fc-ink) 18%, transparent); border-radius:999px; background:color-mix(in srgb, var(--fc-surface) 82%, transparent); }
+  #football-chess .fc-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  #football-chess #fc-reset { border:0; border-radius:999px; padding:10px 14px; background:var(--fc-accent); color:#18322b; font:inherit; font-size:13px; font-weight:850; cursor:pointer; box-shadow:0 3px 0 rgba(24,50,43,.16); }
+  #football-chess #fc-reset:active { transform:translateY(1px); box-shadow:0 1px 0 rgba(24,50,43,.16); }
+  #football-chess .fc-turn-dot { width:9px; height:9px; border-radius:50%; background:#fbfbf4; border:1px solid #4d5b56; box-shadow:0 0 0 2px rgba(255,255,255,.35); }
+  #football-chess .fc-stage { position:relative; padding-left:22px; padding-bottom:22px; }
+  #football-chess .fc-board { aspect-ratio:1; width:100%; display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); grid-template-rows:repeat(8,minmax(0,1fr)); overflow:hidden; border:6px solid #183e31; border-radius:14px; box-shadow:0 18px 42px rgba(11,48,36,.22); }
+  #football-chess .fc-square { position:relative; border:0; padding:0; display:grid; place-items:center; cursor:pointer; background:var(--fc-light); }
+  #football-chess .fc-square.dark { background:var(--fc-dark); }
+  #football-chess .fc-square::after { content:""; position:absolute; inset:34%; border-radius:50%; background:transparent; transform:scale(.65); transition:.14s ease; }
+  #football-chess .fc-square.legal::after { background:rgba(215,255,84,.82); transform:scale(1); box-shadow:0 0 0 5px rgba(215,255,84,.22); }
+  #football-chess .fc-square.capture::after { inset:7%; background:transparent; border:4px solid rgba(215,255,84,.9); transform:scale(1); }
+  #football-chess .fc-square.selected { box-shadow:inset 0 0 0 5px var(--fc-accent); z-index:1; }
+  #football-chess .fc-ball { position:relative; z-index:2; width:76%; aspect-ratio:1; border-radius:50%; display:grid; place-items:center; font-size:clamp(25px, 7.3vw, 55px); line-height:1; filter:drop-shadow(0 5px 3px rgba(0,0,0,.26)); transition:transform .14s ease; user-select:none; }
+  #football-chess .fc-square:hover .fc-ball { transform:translateY(-2px) scale(1.03); }
+  #football-chess .fc-ball.black { filter:grayscale(.88) brightness(.43) contrast(1.5) drop-shadow(0 5px 3px rgba(0,0,0,.34)); }
+  #football-chess .fc-role { position:absolute; right:-3%; bottom:-3%; min-width:20px; height:20px; padding:0 3px; box-sizing:border-box; border-radius:999px; display:grid; place-items:center; background:#fff9dc; color:#173d31; border:2px solid #173d31; font-size:10px; font-weight:900; line-height:1; filter:none; }
+  #football-chess .black .fc-role { background:#18211e; color:#f1f5ef; border-color:#e9f0eb; }
+  #football-chess .fc-rank-labels { position:absolute; left:0; top:6px; bottom:28px; width:18px; display:grid; grid-template-rows:repeat(8,1fr); align-items:center; color:var(--fc-muted); font-size:11px; font-weight:800; }
+  #football-chess .fc-file-labels { position:absolute; left:28px; right:6px; bottom:0; height:18px; display:grid; grid-template-columns:repeat(8,1fr); text-align:center; color:var(--fc-muted); font-size:11px; font-weight:800; }
+  #football-chess .fc-help { text-align:center; color:var(--fc-muted); font-size:13px; margin-top:14px; }
+  #football-chess .fc-board.finished .fc-square { cursor:default; }
+  @media (max-width:480px) {
+    #football-chess .fc-top { align-items:flex-start; }
+    #football-chess .fc-subtitle { display:none; }
+    #football-chess .fc-status { font-size:12px; padding:7px 9px; }
+    #football-chess .fc-board { border-width:4px; border-radius:10px; }
+    #football-chess .fc-role { min-width:16px; height:16px; font-size:8px; border-width:1.5px; }
+  }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script>
+(() => {
+  const root = document.getElementById('football-chess');
+  const boardEl = root.querySelector('#fc-board');
+  const statusEl = root.querySelector('#fc-status-text');
+  const dotEl = root.querySelector('.fc-turn-dot');
+  const resetEl = root.querySelector('#fc-reset');
+  const game = new Chess();
+  const roleNames = { k:'王', q:'后', r:'车', b:'象', n:'马', p:'兵' };
+  let selected = null;
+  let moves = [];
+
+  function statusText() {
+    const side = game.turn() === 'w' ? '白方' : '黑方';
+    dotEl.style.background = game.turn() === 'w' ? '#fbfbf4' : '#17201d';
+    if (game.in_checkmate()) return `${side}被将死，比赛结束`;
+    if (game.in_draw()) return '平局，比赛结束';
+    if (game.in_check()) return `${side}被将军`;
+    return game.turn() === 'w' ? '你先开球' : '电脑思考中';
+  }
+
+  function render() {
+    boardEl.innerHTML = '';
+    statusEl.textContent = statusText();
+    boardEl.classList.toggle('finished', game.game_over());
+    const position = game.board();
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const square = 'abcdefgh'[col] + (8 - row);
+        const piece = position[row][col];
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `fc-square ${(row + col) % 2 ? 'dark' : 'light'}`;
+        button.dataset.square = square;
+        button.setAttribute('role', 'gridcell');
+        button.setAttribute('aria-label', piece ? `${piece.color === 'w' ? '白' : '黑'}方${roleNames[piece.type]}，${square}` : square);
+        if (selected === square) button.classList.add('selected');
+        const candidate = moves.find(move => move.to === square);
+        if (candidate) button.classList.add(candidate.captured ? 'capture' : 'legal');
+        if (piece) {
+          const ball = document.createElement('span');
+          ball.className = `fc-ball ${piece.color === 'w' ? 'white' : 'black'}`;
+          ball.textContent = '⚽';
+          const role = document.createElement('span');
+          role.className = 'fc-role';
+          role.textContent = roleNames[piece.type];
+          ball.appendChild(role);
+          button.appendChild(ball);
+        }
+        button.addEventListener('click', () => choose(square));
+        boardEl.appendChild(button);
+      }
+    }
+  }
+
+  function choose(square) {
+    if (game.game_over() || game.turn() !== 'w') return;
+    const piece = game.get(square);
+    if (selected && moves.some(move => move.to === square)) {
+      game.move({ from:selected, to:square, promotion:'q' });
+      selected = null;
+      moves = [];
+      render();
+      window.setTimeout(computerMove, 450);
+      return;
+    }
+    if (piece && piece.color === game.turn()) {
+      selected = square;
+      moves = game.moves({ square, verbose:true });
+    } else {
+      selected = null;
+      moves = [];
+    }
+    render();
+  }
+
+  function computerMove() {
+    if (game.game_over() || game.turn() !== 'b') return;
+    const options = game.moves({ verbose:true });
+    if (!options.length) return;
+    const captures = options.filter(move => move.captured);
+    const pool = captures.length ? captures : options;
+    const move = pool[Math.floor(Math.random() * pool.length)];
+    game.move({ from:move.from, to:move.to, promotion:'q' });
+    render();
+  }
+
+  resetEl.addEventListener('click', () => {
+    game.reset();
+    selected = null;
+    moves = [];
+    render();
+  });
+
+  render();
+})();
+</script>
